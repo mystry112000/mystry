@@ -1628,6 +1628,36 @@ do
 		},
 		PartOperation = {
 			InitialSize = "MeshSize",
+			Parts = function(instance)
+				local ghp = gethiddenproperty or (global_container and global_container.gethiddenproperty)
+				if ghp then
+					local ok, parts = pcall(ghp, instance, "Parts")
+					if ok and parts and parts ~= "" then
+						-- Parts is binary CSG data, needs BinaryString serialization
+						return parts
+					end
+				end
+				return ""
+			end,
+			Operation = function(instance)
+				local ghp = gethiddenproperty or (global_container and global_container.gethiddenproperty)
+				if ghp then
+					local ok, op = pcall(ghp, instance, "Operation")
+					if ok and op then return op end
+				end
+				return 0 -- Enum.CSGOperation.Union
+			end,
+			-- Ensure Parts is treated as BinaryString for XML serialization
+			Parts_XML = function(instance)
+				local ghp = gethiddenproperty or (global_container and global_container.gethiddenproperty)
+				if ghp then
+					local ok, parts = pcall(ghp, instance, "Parts")
+					if ok and parts and parts ~= "" then
+						return base64encode(parts)
+					end
+				end
+				return ""
+			end,
 		},
 		Part = { shape = "Shape" },
 		SpecialMesh = {
