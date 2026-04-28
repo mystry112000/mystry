@@ -1088,7 +1088,7 @@ do
 	local ClassPropertyExceptions = ArrayToDict({
 		Whitelist = {
 			MeshPart = { "CollisionFidelity" },
-			PartOperation = { "CollisionFidelity" },
+			PartOperation = { "CollisionFidelity", "Parts", "Operation" },
 			TriangleMeshPart = { "CollisionFidelity" },
 		},
 		Blacklist = {
@@ -1628,20 +1628,6 @@ do
 		},
 		PartOperation = {
 			InitialSize = "MeshSize",
-			Parts = function(instance)
-				if gethiddenproperty then
-					local ok, parts = pcall(gethiddenproperty, instance, "Parts")
-					if ok and parts then return parts end
-				end
-				return ""
-			end,
-			Operation = function(instance)
-				if gethiddenproperty then
-					local ok, op = pcall(gethiddenproperty, instance, "Operation")
-					if ok and op then return op end
-				end
-				return 0
-			end,
 		},
 		Part = { shape = "Shape" },
 		SpecialMesh = {
