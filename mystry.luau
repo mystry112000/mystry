@@ -2378,7 +2378,7 @@ local function synsaveinstance(CustomOptions, CustomOptions2)
 
 		IgnoreSharedStrings = EXECUTOR_NAME ~= "Wave",
 		SharedStringOverwrite = false,
-		TreatUnionsAsParts = EXECUTOR_NAME == "Solara", -- TODO Temporary true (once removed, remove Note from docs too)
+		TreatUnionsAsParts = true, -- Enable union/meshpart saving
 		AlternativeWritefile = not ArrayToDict({ "WRD", "Xeno", "Zorara" })[EXECUTOR_NAME],
 
 		OptionsAliases = { -- You can't really modify these as a user (because they're read before user's Options are loaded)
@@ -4059,12 +4059,12 @@ local function synsaveinstance(CustomOptions, CustomOptions2)
 		StatusText = Instance.new("TextLabel")
 
 		StatusText.Text = "Saving..."
-
-		StatusText.BackgroundTransparency = 1
+		StatusText.BackgroundColor3 = Color3.new(0.2, 0.4, 0.8) -- Blue background
+		StatusText.BackgroundTransparency = 0
 		StatusText.Font = Enum.Font.Code
-		StatusText.AnchorPoint = Vector2.new(1)
-		StatusText.Position = UDim2.new(1)
-		StatusText.Size = UDim2.new(0.3, 0, 0, 20)
+		StatusText.AnchorPoint = Vector2.new(0.5, 0)
+		StatusText.Position = UDim2.new(0.5, 0, 0.5, -50)
+		StatusText.Size = UDim2.new(0.4, 0, 0, 50)
 
 		StatusText.TextColor3 = Color3.new(1, 1, 1)
 		StatusText.TextScaled = true
