@@ -1571,29 +1571,33 @@ do
 		MeshPart = {
 			InitialSize = "MeshSize",
 			MeshId = function(instance)
-				local ok, val = pcall(gethiddenproperty or gethiddenproperty, instance, "MeshId")
-				if ok and val and val ~= "" then return val end
+				if gethiddenproperty then
+					local ok, val = pcall(gethiddenproperty, instance, "MeshId")
+					if ok and val and val ~= "" then return val end
+				end
 				return instance.MeshId
 			end,
 			TextureId = function(instance)
-				local ok, val = pcall(gethiddenproperty or gethiddenproperty, instance, "TextureId")
-				if ok and val and val ~= "" then return val end
+				if gethiddenproperty then
+					local ok, val = pcall(gethiddenproperty, instance, "TextureId")
+					if ok and val and val ~= "" then return val end
+				end
 				return instance.TextureId
 			end,
 		},
 		PartOperation = {
 			InitialSize = "MeshSize",
 			Parts = function(instance)
-				local ok, parts = pcall(gethiddenproperty or gethiddenproperty, instance, "Parts")
-				if ok and parts then
-					return parts
+				if gethiddenproperty then
+					local ok, parts = pcall(gethiddenproperty, instance, "Parts")
+					if ok and parts then return parts end
 				end
 				return ""
 			end,
 			Operation = function(instance)
-				local ok, op = pcall(gethiddenproperty or gethiddenproperty, instance, "Operation")
-				if ok and op then
-					return op
+				if gethiddenproperty then
+					local ok, op = pcall(gethiddenproperty, instance, "Operation")
+					if ok and op then return op end
 				end
 				return 0
 			end,
