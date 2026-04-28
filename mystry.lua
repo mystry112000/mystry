@@ -1568,9 +1568,53 @@ do
 		TriangleMeshPart = {
 			FluidFidelityInternal = "FluidFidelity",
 		},
-		MeshPart = { InitialSize = "MeshSize" },
-		PartOperation = { InitialSize = "MeshSize" },
+		MeshPart = {
+			InitialSize = "MeshSize",
+			MeshId = function(instance)
+				local ok, val = pcall(gethiddenproperty or gethiddenproperty, instance, "MeshId")
+				if ok and val and val ~= "" then return val end
+				return instance.MeshId
+			end,
+			TextureId = function(instance)
+				local ok, val = pcall(gethiddenproperty or gethiddenproperty, instance, "TextureId")
+				if ok and val and val ~= "" then return val end
+				return instance.TextureId
+			end,
+		},
+		PartOperation = {
+			InitialSize = "MeshSize",
+			Parts = function(instance)
+				local ok, parts = pcall(gethiddenproperty or gethiddenproperty, instance, "Parts")
+				if ok and parts then
+					return parts
+				end
+				return ""
+			end,
+			Operation = function(instance)
+				local ok, op = pcall(gethiddenproperty or gethiddenproperty, instance, "Operation")
+				if ok and op then
+					return op
+				end
+				return 0
+			end,
+		},
 		Part = { shape = "Shape" },
+		SpecialMesh = {
+			MeshId = function(instance)
+				return instance.MeshId
+			end,
+			TextureId = function(instance)
+				return instance.TextureId
+			end,
+			MeshType = function(instance)
+				return instance.MeshType
+			end,
+		},
+		FileMesh = {
+			MeshId = function(instance)
+				return instance.MeshId
+			end,
+		},
 		TrussPart = { style = "Style" },
 		FormFactorPart = {
 			formFactorRaw = "FormFactor",
@@ -2305,7 +2349,7 @@ local function synsaveinstance(CustomOptions, CustomOptions2)
 
 		IgnoreSharedStrings = EXECUTOR_NAME ~= "Wave",
 		SharedStringOverwrite = false,
-		TreatUnionsAsParts = EXECUTOR_NAME == "Solara", -- TODO Temporary true (once removed, remove Note from docs too)
+		TreatUnionsAsParts = false, -- Save unions as PartOperation to preserve CSG shape
 		AlternativeWritefile = not ArrayToDict({ "WRD", "Xeno", "Zorara" })[EXECUTOR_NAME],
 
 		OptionsAliases = { -- You can't really modify these as a user (because they're read before user's Options are loaded)
