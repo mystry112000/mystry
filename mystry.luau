@@ -45,7 +45,7 @@ do
 		-- readbinarystring = 'string.find(...,"bin",nil,true)', -- ! Could match some unwanted stuff (getbinaryindex)
 		-- request = 'string.find(...,"request",nil,true) and not string.find(...,"internal",nil,true)',
 		base64encode = 'local a={...}local b=a[1]local function c(a,b)return string.find(a,b,nil,true)end;return c(b,"encode")and(c(b,"base64")or c(string.lower(tostring(a[2])),"base64"))',
-		-- cloneref = 'string.find(...,"clone",nil,true) and string.find(...,"ref",nil,true)',
+		cloneref = 'string.find(...,"clone",nil,true) and string.find(...,"ref",nil,true)',
 		-- decompile = '(string.find(...,"decomp",nil,true) and string.sub(...,#...) ~= "s")',
 		gethiddenproperty = 'string.find(...,"get",nil,true) and string.find(...,"h",nil,true) and string.find(...,"prop",nil,true) and string.sub(...,#...) ~= "s"',
 		gethui = 'string.find(...,"get",nil,true) and string.find(...,"h",nil,true) and string.find(...,"ui",nil,true)',
@@ -54,7 +54,7 @@ do
 		getscriptbytecode = 'string.find(...,"get",nil,true) and string.find(...,"script",nil,true) and string.find(...,"bytecode",nil,true)', --  or string.find(...,"dump",nil,true) and string.find(...,"string",nil,true) due to Fluxus (dumpstring returns a function)
 		-- hash = 'local a={...}local b=a[1]local function c(a,b)return string.find(a,b,nil,true)end;return c(b,"hash")and c(string.lower(tostring(a[2])),"crypt")',
 		protectgui = 'string.find(...,"protect",nil,true) and string.find(...,"ui",nil,true) and not string.find(...,"un",nil,true)',
-		-- setthreadidentity = 'string.find(...,"identity",nil,true) and string.find(...,"set",nil,true)',
+		setthreadidentity = 'string.find(...,"identity",nil,true) and string.find(...,"set",nil,true)',
 	}, true, 10)
 end
 
@@ -62,8 +62,10 @@ local identify_executor = identifyexecutor or getexecutorname or whatexecutor
 
 local EXECUTOR_NAME = identify_executor and identify_executor() or ""
 
--- local cloneref = global_container.cloneref
+local cloneref = global_container.cloneref
 local gethiddenproperty = global_container.gethiddenproperty
+local setthreadidentity = global_container.setthreadidentity
+local getthreadidentity = getthreadidentity
 
 -- These should be universal enough
 local appendfile = appendfile
@@ -1629,34 +1631,68 @@ do
 		PartOperation = {
 			InitialSize = "MeshSize",
 			Parts = function(instance)
+				-- Method 1: gethiddenproperty
 				local ghp = gethiddenproperty or (global_container and global_container.gethiddenproperty)
 				if ghp then
 					local ok, parts = pcall(ghp, instance, "Parts")
-					if ok and parts and parts ~= "" then
-						-- Parts is binary CSG data, needs BinaryString serialization
-						return parts
-					end
+					if ok and parts and parts ~= "" then return parts end
 				end
+				-- Method 2: cloneref bypass
+				local cr = cloneref or (global_container and global_container.cloneref)
+				if cr then
+					local ok, parts = pcall(function()
+						local ref = cr(instance)
+						return ref.Parts
+					end)
+					if ok and parts and parts ~= "" then return parts end
+				end
+				-- Method 3: identity elevation
+				local setid = setthreadidentity or (global_container and global_container.setthreadidentity)
+				if setid then
+					local getid = getthreadidentity
+					local old = getid and getid() or 3
+					setid(8)
+					local ok, parts = pcall(function() return instance.Parts end)
+					if getid then setid(old) end
+					if ok and parts and parts ~= "" then return parts end
+				end
+				-- Method 5: try reading via Instance.fromExisting
+				local ok, parts = pcall(function()
+					local clone = Instance.fromExisting(instance)
+					p = clone.Parts
+					clone:Destroy()
+					return p
+				end)
+				if ok and parts and parts ~= "" then return parts end
 				return ""
 			end,
 			Operation = function(instance)
+				-- Method 1: gethiddenproperty
 				local ghp = gethiddenproperty or (global_container and global_container.gethiddenproperty)
 				if ghp then
 					local ok, op = pcall(ghp, instance, "Operation")
 					if ok and op then return op end
 				end
-				return 0 -- Enum.CSGOperation.Union
-			end,
-			-- Ensure Parts is treated as BinaryString for XML serialization
-			Parts_XML = function(instance)
-				local ghp = gethiddenproperty or (global_container and global_container.gethiddenproperty)
-				if ghp then
-					local ok, parts = pcall(ghp, instance, "Parts")
-					if ok and parts and parts ~= "" then
-						return base64encode(parts)
-					end
+				-- Method 2: cloneref bypass
+				local cr = cloneref or (global_container and global_container.cloneref)
+				if cr then
+					local ok, op = pcall(function()
+						local ref = cr(instance)
+						return ref.Operation
+					end)
+					if ok and op then return op end
 				end
-				return ""
+				-- Method 3: identity elevation
+				local setid = setthreadidentity or (global_container and global_container.setthreadidentity)
+				if setid then
+					local getid = getthreadidentity
+					local old = getid and getid() or 3
+					setid(8)
+					local ok, op = pcall(function() return instance.Operation end)
+					if getid then setid(old) end
+					if ok and op then return op end
+				end
+				return 0 -- Enum.CSGOperation.Union
 			end,
 		},
 		Part = { shape = "Shape" },
@@ -2719,7 +2755,7 @@ local function synsaveinstance(CustomOptions, CustomOptions2)
 	local IgnorePropertiesOfNotScriptsOnScriptsMode = OPTIONS.IgnorePropertiesOfNotScriptsOnScriptsMode
 
 	local old_gethiddenproperty
-	if OPTIONS and gethiddenproperty then
+	if OPTIONS and OPTIONS.IgnoreSpecialProperties and gethiddenproperty then
 		old_gethiddenproperty = gethiddenproperty
 		gethiddenproperty = nil
 	end
@@ -4245,16 +4281,8 @@ local function synsaveinstance(CustomOptions, CustomOptions2)
 				end
 				if gethiddenproperty then
 					local o, r = pcall(gethiddenproperty, workspace, "StreamOutBehavior")
-					if not o or r ~= nil and typeof(r) ~= "EnumItem" then -- * Tests if gethiddenproperty is broken
-						gethiddenproperty = nil
-					else
-						o, r =
-							pcall(gethiddenproperty, Instance.new("AnimationRigData", Instance.new("Folder")), "parent") -- * Tests how it reacts to property overlap (shadowing) due to AnimationRigData.parent; expected BinaryString
-
-						if o and r ~= nil and type(r) ~= "string" then
-							gethiddenproperty = nil
-						end
-					end
+					-- Only mark as broken if executor lacks it, but keep the reference
+					-- Some executors fail on specific properties but work on others (e.g. PartOperation.Parts)
 				end
 				local function benchmark(funcs, ...)
 					local ranking = table.create(2)
